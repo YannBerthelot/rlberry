@@ -1,8 +1,10 @@
 import numpy as np
 from rlberry.agents import AgentWithSimplePolicy
-from .tools import BanditTracker
-import pickle
 
+import pickle
+from typing import Any, Union
+from typing_extensions import Self
+from rlberry.envs.bandits.bandit_base import Bandit
 from pathlib import Path
 
 import rlberry
@@ -29,17 +31,21 @@ class BanditWithSimplePolicy(AgentWithSimplePolicy):
 
     name = ""
 
-    def __init__(self, env, tracker_params={}, **kwargs):
+    def __init__(
+        self: Self, env: Bandit, tracker_params: dict = {}, **kwargs: Any
+    ) -> None:
+        from .tools import BanditTracker
+
         AgentWithSimplePolicy.__init__(self, env, **kwargs)
         self.n_arms = self.env.action_space.n
         self.arms = np.arange(self.n_arms)
         self.tracker = BanditTracker(self, tracker_params)
 
     @property
-    def total_time(self):
+    def total_time(self: Self) -> int:
         return self.tracker.t
 
-    def fit(self, budget=None, **kwargs):
+    def fit(self: Self, budget: int = None, **kwargs: Any) -> dict[str, float]:
         """
         Example fit function. Should be overwritten by your own implementation.
 
@@ -63,10 +69,10 @@ class BanditWithSimplePolicy(AgentWithSimplePolicy):
         info = {"episode_reward": np.sum(rewards)}
         return info
 
-    def policy(self, observation):
+    def policy(self: Self, _: Any) -> int:
         return self.optimal_action
 
-    def save(self, filename):
+    def save(self: Self, filename: Union[str, Path]) -> Union[str, Path]:
         """
         Save agent object.
 
@@ -102,7 +108,9 @@ class BanditWithSimplePolicy(AgentWithSimplePolicy):
         return filename
 
     @classmethod
-    def load(cls, filename, **kwargs):
+    def load(
+        cls: type[Self], filename: Union[str, Path], **kwargs: Any
+    ) -> Union[str, Path]:
         """Load agent object.
 
         If overridden, save() method must also be overriden.

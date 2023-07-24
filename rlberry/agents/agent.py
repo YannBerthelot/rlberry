@@ -12,7 +12,9 @@ from rlberry.seeding.seeder import Seeder
 from rlberry.seeding import safe_reseed
 from rlberry.envs.utils import process_env
 from rlberry.utils.writers import DefaultWriter
-from typing import Optional
+from typing import Optional, Any, Union, Generator, List, Type
+from typing_extensions import Self
+import optuna
 import inspect
 
 import rlberry
@@ -82,8 +84,8 @@ class Agent(ABC):
     name = ""
 
     def __init__(
-        self,
-        env: types.Env = None,
+        self: Self,
+        env: Optional[types.Env] = None,
         eval_env: Optional[types.Env] = None,
         copy_env: bool = True,
         compress_pickle: bool = True,
@@ -92,8 +94,8 @@ class Agent(ABC):
         _execution_metadata: Optional[metadata_utils.ExecutionMetadata] = None,
         _default_writer_kwargs: Optional[dict] = None,
         _thread_shared_data: Optional[dict] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         # Check if wrong parameters have been sent to an agent.
         assert kwargs == {}, "Unknown parameters sent to agent:" + str(kwargs.keys())
 
@@ -127,35 +129,35 @@ class Agent(ABC):
         self._thread_shared_data = _thread_shared_data
 
     @property
-    def writer(self):
+    def writer(self: Self) -> DefaultWriter:
         """
         Writer object.
         """
         return self._writer
 
     @property
-    def unique_id(self):
+    def unique_id(self: Self) -> str:
         """
         Unique identifier for the agent instance. Can be used, for example, to create files/directories for the agent to log data safely.
         """
         return self._unique_id
 
     @property
-    def output_dir(self):
+    def output_dir(self: Self) -> Union[str, Path]:
         """
         Directory that the agent can use to store data.
         """
         return self._output_dir
 
     @property
-    def rng(self):
+    def rng(self: Self) -> Generator:
         """
         Random number generator.
         """
         return self.seeder.rng
 
     @property
-    def thread_shared_data(self):
+    def thread_shared_data(self: Self) -> dict:
         """
         Data shared by agent instances among different threads.
         """
@@ -164,7 +166,7 @@ class Agent(ABC):
         return self._thread_shared_data
 
     @abstractmethod
-    def fit(self, budget: int, **kwargs):
+    def fit(self: Self, budget: int, **kwargs: Any) -> None:
         """
 
         Train the agent using the provided environment.
@@ -207,7 +209,7 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def eval(self, **kwargs):
+    def eval(self: Self, **kwargs: Any) -> None:
         """
 
         Returns a float measuring the quality of the agent (e.g. MC policy evaluation).
@@ -221,7 +223,7 @@ class Agent(ABC):
         """
         pass
 
-    def set_writer(self, writer):
+    def set_writer(self: Self, writer: DefaultWriter) -> None:
         """set self._writer. If is not None, add parameters values to writer."""
         self._writer = writer
 
@@ -234,7 +236,7 @@ class Agent(ABC):
             )
 
     @classmethod
-    def sample_parameters(cls, trial):
+    def sample_parameters(cls: Type[Self], trial: optuna.trial):
         """
         Sample hyperparameters for hyperparam optimization using
         Optuna (https://optuna.org/)
@@ -248,7 +250,7 @@ class Agent(ABC):
         """
         raise NotImplementedError("agent.sample_parameters() not implemented.")
 
-    def reseed(self, seed_seq=None):
+    def reseed(self: Self, seed_seq: Optional[np.random.SeedSequence] = None) -> None:
         """
         Get new random number generator for the agent.
 
@@ -268,7 +270,7 @@ class Agent(ABC):
         safe_reseed(self.env, self.seeder)
         safe_reseed(self.eval_env, self.seeder)
 
-    def save(self, filename):
+    def save(self: Self, filename: Union[str, Path]) -> Optional[Union[str, Path]]:
         """
         Save agent object. By default, the agent is pickled.
 
@@ -330,7 +332,7 @@ class Agent(ABC):
         return filename
 
     @classmethod
-    def load(cls, filename, **kwargs):
+    def load(cls: Type[Self], filename: Union[str, Path], **kwargs: Any) -> Self:
         """Load agent object.
 
         If overridden, save() method must also be overriden.
@@ -364,7 +366,7 @@ class Agent(ABC):
         return obj
 
     @classmethod
-    def _get_param_names(cls):
+    def _get_param_names(cls: Type[Self]) -> List[str]:
         """Get parameter names for the Model"""
         # fetch the constructor or the original constructor before
         # deprecation wrapping if any
@@ -386,7 +388,7 @@ class Agent(ABC):
         # Extract and sort argument names excluding 'self'
         return sorted([p.name for p in parameters])
 
-    def get_params(self, deep=True):
+    def get_params(self: Self, deep: bool = True) -> dict:
         """
         Get parameters for this agent.
 
@@ -484,11 +486,17 @@ class AgentWithSimplePolicy(Agent):
     """
 
     @abstractmethod
-    def policy(self, observation):
+    def policy(self: Self, observation: np.ndarray) -> int:
         """Returns an action, given an observation."""
         pass
 
-    def eval(self, eval_horizon=10**5, n_simulations=10, gamma=1.0, **kwargs):
+    def eval(
+        self: Self,
+        eval_horizon: int = 10**5,
+        n_simulations: int = 10,
+        gamma: float = 1.0,
+        **kwargs: Any,
+    ) -> float:
         """
         Monte-Carlo policy evaluation [1]_ of an agent to estimate the value at the initial state.
 
@@ -583,7 +591,7 @@ class AgentTorch(Agent):
         Data shared by agent instances among different threads.
     """
 
-    def save(self, filename):
+    def save(self: Self, filename: Union[Path, str]) -> Optional[Union[Path, str]]:
         """
         Overwrite the 'save' function to manage CPU vs GPU  save/load in torch agent
 
@@ -655,7 +663,7 @@ class AgentTorch(Agent):
         return filename
 
     @classmethod
-    def load(cls, filename, **kwargs):
+    def load(cls: Type[Self], filename: Union[Path, str], **kwargs: Any) -> Self:
         """
         Overwrite the 'save' and 'load' functions to manage CPU vs GPU  save/load in torch agent.
 

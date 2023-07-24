@@ -1,6 +1,10 @@
+from typing import Optional, Tuple
+
+import gymnasium as gym
 import gymnasium.spaces as spaces
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 from rlberry.agents.adaptiveql.utils import bounds_contains, split_bounds
 
 
@@ -29,7 +33,9 @@ class TreeNode:
 
     """
 
-    def __init__(self, bounds, depth, qvalue=0.0, n_visits=0):
+    def __init__(
+        self, bounds: np.ndarray, depth: int, qvalue: float = 0.0, n_visits: int = 0
+    ) -> None:
         self.dim = len(bounds)
 
         self.radius = (bounds[:, 1] - bounds[:, 0]).max() / 2.0
@@ -55,14 +61,14 @@ class TreeNode:
         # Dictionary node_id -> node
         self.transition_nodes = {}
 
-    def is_leaf(self):
+    def is_leaf(self) -> bool:
         return len(self.children) == 0
 
-    def contains(self, x):
+    def contains(self, x: np.ndarray) -> bool:
         """Check if `x` is contained in the node/ball."""
         return bounds_contains(self.bounds, x)
 
-    def split(self):
+    def split(self) -> None:
         """Spawn children nodes by splitting the ball."""
         child_bounds = split_bounds(self.bounds)
         for bounds in child_bounds:
@@ -85,7 +91,7 @@ class TreePartition:
         Value to initialize the root node.
     """
 
-    def __init__(self, space, initial_value=0.0):
+    def __init__(self, space: gym.spaces.Box, initial_value: float = 0.0) -> None:
         assert isinstance(space, spaces.Box)
         assert space.is_bounded()
 
@@ -94,7 +100,7 @@ class TreePartition:
         self.dim = bounds.shape[0]
         self.dmax = self.root.radius
 
-    def traverse(self, x, update=False):
+    def traverse(self, x: np.ndarray, update: bool = False) -> TreeNode:
         """
         Returns leaf node containing x.
 
@@ -124,12 +130,12 @@ class TreePartition:
 
     def plot(
         self,
-        fignum="tree plot",
-        colormap_name="cool",
-        max_value=10,
-        node=None,
-        root=True,
-    ):
+        fignum: str = "tree plot",
+        colormap_name: str = "cool",
+        max_value: int = 10,
+        node: Optional[TreeNode] = None,
+        root: bool = True,
+    ) -> None:
         """
         Visualize the function (2d domain only).
         Shows the hierarchical partition.
@@ -171,7 +177,9 @@ class MDPTreePartition:
     Used to store/manipulate a Q function, a reward function and a transition model.
     """
 
-    def __init__(self, observation_space, action_space, horizon):
+    def __init__(
+        self, observation_space: spaces.Box, action_space: spaces.Discrete, horizon: int
+    ) -> None:
         self.horizon = horizon
         self.n_actions = action_space.n
         self.trees = []
@@ -184,7 +192,7 @@ class MDPTreePartition:
 
         self.dmax = self.trees[0][0].dmax
 
-    def get_argmax_and_node(self, x, hh):
+    def get_argmax_and_node(self, x: np.ndarray, hh: int) -> Tuple[int, TreeNode]:
         """
         Returns a* = argmax_a Q_h(x, a) and the node corresponding to (x, a*).
         """
@@ -204,7 +212,7 @@ class MDPTreePartition:
 
         return best_action, best_node
 
-    def update_counts(self, x, aa, hh):
+    def update_counts(self, x: np.ndarray, aa: int, hh: int) -> TreeNode:
         """
         Increment counters associated to (x, aa, hh) and returns the node.
         """
@@ -212,7 +220,7 @@ class MDPTreePartition:
         node = tree.traverse(x, update=True)
         return node
 
-    def plot(self, a, h):
+    def plot(self, a: int, h: int) -> None:
         """
         Visualize Q_h(x, a)
         """

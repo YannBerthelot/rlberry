@@ -1,8 +1,12 @@
-import numpy as np
-from rlberry.agents.bandits import BanditWithSimplePolicy
+from typing import Any, Callable, List, Optional
 
+import numpy as np
+from typing_extensions import Self
 
 import rlberry
+from rlberry.agents.bandits import BanditWithSimplePolicy
+from rlberry.agents.bandits.tools import BanditTracker
+from rlberry.envs.bandits.bandit_base import Bandit
 
 logger = rlberry.logger
 
@@ -53,7 +57,12 @@ class IndexAgent(BanditWithSimplePolicy):
 
     name = "IndexAgent"
 
-    def __init__(self, env, index_function=None, **kwargs):
+    def __init__(
+        self: Self,
+        env: Bandit,
+        index_function: Callable[[BanditTracker], List[float]] = None,
+        **kwargs: Any
+    ) -> Callable[[BanditTracker], List[float]]:
         BanditWithSimplePolicy.__init__(self, env, **kwargs)
         if index_function is None:
 
@@ -65,7 +74,7 @@ class IndexAgent(BanditWithSimplePolicy):
 
         self.index_function = index_function
 
-    def fit(self, budget=None, **kwargs):
+    def fit(self: Self, budget: Optional[int] = None, **kwargs: Any) -> dict:
         """
         Train the bandit using the provided environment.
 

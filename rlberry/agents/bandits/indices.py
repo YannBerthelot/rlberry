@@ -1,8 +1,13 @@
+from typing import Callable, List, Tuple, Union
+
 import numpy as np
-from typing import Callable
+
+from rlberry.agents.bandits.tools import BanditTracker
 
 
-def makeETCIndex(A: int = 2, m: int = 1):
+def makeETCIndex(
+    A: int = 2, m: int = 1
+) -> Tuple[Callable[[BanditTracker], List[float]], dict]:
     """
     Explore-Then-Commit index, see Chapter 6 in [1].
 
@@ -39,8 +44,9 @@ def makeETCIndex(A: int = 2, m: int = 1):
 
 def makeSubgaussianUCBIndex(
     sigma: float = 1.0,
-    delta: Callable = lambda t: 1 / (1 + (t + 1) * np.log(t + 1) ** 2),
-):
+    delta: Callable[[Union[int, BanditTracker]], float] = lambda t: 1
+    / (1 + (t + 1) * np.log(t + 1) ** 2),
+) -> Tuple[Callable[[Union[int, BanditTracker]], List[float]], dict]:
     """
     UCB index for sub-Gaussian distributions, see Chapters 7 & 8 in [1].
 
@@ -83,8 +89,9 @@ def makeSubgaussianUCBIndex(
 def makeBoundedUCBIndex(
     upper_bound: float = 1.0,
     lower_bound: float = 0.0,
-    delta: Callable = lambda t: 1 / (1 + (t + 1) * np.log(t + 1) ** 2),
-):
+    delta: Callable[[Union[int, BanditTracker]], float] = lambda t: 1
+    / (1 + (t + 1) * np.log(t + 1) ** 2),
+) -> Tuple[List[float], dict]:
     """
     UCB index for bounded distributions, see Chapters 7 & 8 in [1].
     By Hoeffding's lemma, such distributions are sigma-sub-Gaussian with
@@ -121,7 +128,9 @@ def makeBoundedUCBIndex(
     return makeSubgaussianUCBIndex((upper_bound - lower_bound) / 2, delta)
 
 
-def makeSubgaussianMOSSIndex(T: int = 1, A: int = 2, sigma: float = 1.0):
+def makeSubgaussianMOSSIndex(
+    T: int = 1, A: int = 2, sigma: float = 1.0
+) -> Tuple[Callable[[Union[int, BanditTracker]], List[float]], dict]:
     """
     MOSS index for sub-Gaussian distributions, see Chapters 9 in [1].
 
@@ -168,7 +177,7 @@ def makeSubgaussianMOSSIndex(T: int = 1, A: int = 2, sigma: float = 1.0):
 
 def makeBoundedMOSSIndex(
     T: float = 1, A: float = 2, upper_bound: float = 1.0, lower_bound: float = 0.0
-):
+) -> Tuple[List[float], dict]:
     """
     MOSS index for bounded distributions, see Chapters 9 in [1].
     By Hoeffding's lemma, such distributions are sigma-sub-Gaussian with
@@ -207,7 +216,7 @@ def makeBoundedMOSSIndex(
     return makeSubgaussianMOSSIndex(T, A, (upper_bound - lower_bound) / 2)
 
 
-def makeEXP3Index():
+def makeEXP3Index() -> Tuple[Callable[[Union[int, BanditTracker]], List[float]], dict]:
     """
     EXP3 index for distributions in [0, 1], see Chapters 11 in [1] and [2].
 
@@ -246,7 +255,9 @@ def makeEXP3Index():
     return prob, {"do_iwr": True}
 
 
-def makeBoundedIMEDIndex(upper_bound: float = 1.0):
+def makeBoundedIMEDIndex(
+    upper_bound: float = 1.0,
+) -> Tuple[Callable[[BanditTracker], np.ndarray], dict]:
     """
     IMED index for semi-bounded distributions, see [1].
 
@@ -301,7 +312,9 @@ def makeBoundedIMEDIndex(upper_bound: float = 1.0):
     return index, {"store_rewards": True}
 
 
-def makeBoundedNPTSIndex(upper_bound: float = 1.0):
+def makeBoundedNPTSIndex(
+    upper_bound: float = 1.0,
+) -> Tuple[Callable[[BanditTracker], np.ndarray], dict]:
     """
     NPTS index for bounded distributions, see [1].
 
@@ -346,7 +359,7 @@ def makeBoundedUCBVIndex(
     c: float = 0.34,
     zeta: float = 1.0,
     delta: Callable = lambda t: 1 / t,
-):
+) -> Tuple[Callable[[BanditTracker], np.ndarray], dict]:
     """
     UCBV index for bounded distributions, see [1]. In particular, the index
     recommended on p10 is implemented.

@@ -1,9 +1,13 @@
+from typing import Any, NoReturn, Tuple, Union
+
+import gymnasium as gym
 import gymnasium.spaces as spaces
 import numpy as np
-from rlberry.agents import AgentWithSimplePolicy
-from rlberry.agents.adaptiveql.tree import MDPTreePartition
+from typing_extensions import Self
 
 import rlberry
+from rlberry.agents import AgentWithSimplePolicy
+from rlberry.agents.adaptiveql.tree import MDPTreePartition, TreeNode
 
 logger = rlberry.logger
 
@@ -45,14 +49,14 @@ class AdaptiveQLAgent(AgentWithSimplePolicy):
     name = "AdaptiveQLearning"
 
     def __init__(
-        self,
-        env,
-        gamma=1.0,
-        horizon=50,
-        bonus_scale_factor=1.0,
-        bonus_type="simplified_bernstein",
-        **kwargs
-    ):
+        self: Self,
+        env: gym.Env,
+        gamma: float = 1.0,
+        horizon: int = 50,
+        bonus_scale_factor: float = 1.0,
+        bonus_type: str = "simplified_bernstein",
+        **kwargs: Any
+    ) -> None:
         AgentWithSimplePolicy.__init__(self, env, **kwargs)
 
         assert isinstance(self.env.observation_space, spaces.Box)
@@ -79,7 +83,7 @@ class AdaptiveQLAgent(AgentWithSimplePolicy):
 
         self.reset()
 
-    def reset(self):
+    def reset(self: Self) -> None:
         self.Qtree = MDPTreePartition(
             self.env.observation_space, self.env.action_space, self.horizon
         )
@@ -87,15 +91,25 @@ class AdaptiveQLAgent(AgentWithSimplePolicy):
         # info
         self.episode = 0
 
-    def policy(self, observation):
+    def policy(self: Self, observation: np.ndarray) -> int:
         action, _ = self.Qtree.get_argmax_and_node(observation, 0)
         return action
 
-    def _get_action_and_node(self, observation, hh):
+    def _get_action_and_node(
+        self: Self, observation: np.ndarray, hh: int
+    ) -> Tuple[int, TreeNode]:
         action, node = self.Qtree.get_argmax_and_node(observation, hh)
         return action, node
 
-    def _update(self, node, state, action, next_state, reward, hh):
+    def _update(
+        self: Self,
+        node: TreeNode,
+        state: np.ndarray,
+        action: int,
+        next_state: np.ndarray,
+        reward: float,
+        hh: int,
+    ) -> None:
         # split node if necessary
         node_to_check = self.Qtree.update_counts(state, action, hh)
         if node_to_check.n_visits >= (self.Qtree.dmax / node_to_check.radius) ** 2.0:
@@ -121,7 +135,7 @@ class AdaptiveQLAgent(AgentWithSimplePolicy):
         # update Q
         node.qvalue = (1 - alpha) * node.qvalue + alpha * target
 
-    def _compute_bonus(self, n, hh):
+    def _compute_bonus(self: Self, n: int, hh: int) -> Union[float, NoReturn]:
         if self.bonus_type == "simplified_bernstein":
             bonus = self.bonus_scale_factor * np.sqrt(1.0 / n) + self.v_max[hh] / n
             bonus = min(bonus, self.v_max[hh])
@@ -131,7 +145,7 @@ class AdaptiveQLAgent(AgentWithSimplePolicy):
                 "Error: bonus type {} not implemented".format(self.bonus_type)
             )
 
-    def _run_episode(self):
+    def _run_episode(self: Self) -> float:
         # interact for H steps
         episode_rewards = 0
         observation, info = self.env.reset()
@@ -159,7 +173,7 @@ class AdaptiveQLAgent(AgentWithSimplePolicy):
         # return sum of rewards collected in the episode
         return episode_rewards
 
-    def fit(self, budget: int, **kwargs):
+    def fit(self: Self, budget: int, **kwargs: Any) -> None:
         """
         Train the agent using the provided environment.
 

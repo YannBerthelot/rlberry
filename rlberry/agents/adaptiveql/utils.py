@@ -1,8 +1,12 @@
+from typing import List
+
+import numpy as np
+
 from rlberry.utils.jit_setup import numba_jit
 
 
 @numba_jit
-def bounds_contains(bounds, x):
+def bounds_contains(bounds: np.ndarray, x: np.ndarray) -> bool:
     """
     Returns True if `x` is contained in the bounds, and False otherwise.
 
@@ -23,7 +27,7 @@ def bounds_contains(bounds, x):
     return True
 
 
-def split_bounds(bounds, dim=0):
+def split_bounds(bounds: np.ndarray, dim: int = 0) -> List[np.ndarray]:
     """
     Split an array representing an l-infinity ball in R^d in R^d
     into a list of 2^d arrays representing the ball split.

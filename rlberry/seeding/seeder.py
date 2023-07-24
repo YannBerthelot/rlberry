@@ -1,4 +1,7 @@
 from numpy.random import SeedSequence, default_rng
+from typing_extensions import Self
+from typing import Union, Optional, List
+import numpy as np
 
 
 class Seeder:
@@ -42,7 +45,11 @@ class Seeder:
 
     """
 
-    def __init__(self, seed_seq=None, spawn_seed_seq=True):
+    def __init__(
+        self: Self,
+        seed_seq: Optional[Union[SeedSequence, Self, int]] = None,
+        spawn_seed_seq: bool = True,
+    ) -> None:
         super().__init__()
         if seed_seq is None:
             seed_seq = SeedSequence()
@@ -59,7 +66,9 @@ class Seeder:
         self.seed_seq = seed_seq
         self.rng = default_rng(self.seed_seq)
 
-    def reseed(self, seed_seq=None):
+    def reseed(
+        self: Self, seed_seq: Optional[Union[SeedSequence, Self, int]] = None
+    ) -> None:
         """
         Get new random number generator.
 
@@ -90,7 +99,7 @@ class Seeder:
         self.seed_seq = seed_seq
         self.rng = default_rng(self.seed_seq)
 
-    def spawn(self, n=1, squeeze=True):
+    def spawn(self: Self, n: int = 1, squeeze: bool = True) -> List[Self]:
         """
         Spawn a list of Seeder from the seed sequence of the object (self.seed_seq).
 
@@ -112,8 +121,8 @@ class Seeder:
             spawned_seeders = spawned_seeders[0]
         return spawned_seeders
 
-    def generate_state(self, n):
+    def generate_state(self: Self, n: int) -> np.ndarray:
         return self.seed_seq.generate_state(n)
 
-    def __str__(self):
+    def __str__(self: Self) -> str:
         return f"Seeder object with: {self.seed_seq.__str__()}"
